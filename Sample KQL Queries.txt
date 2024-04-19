@@ -1,0 +1,65 @@
+// query count, distinctUsers, avgCPU, avgDuration of operation by workspace for last 30d
+PowerBIDatasetsWorkspace  
+| where TimeGenerated > ago(30d)
+| where OperationName == "QueryEnd" 
+| summarize QueryCount=count()
+    , Users = dcount(ExecutingUser)
+    , AvgCPU = avg(CpuTimeMs)
+    , AvgDuration = avg(DurationMs)
+by PowerBIWorkspaceId
+-------------------------------------------------------------------------------------------
+//diagnostic Data for specific dataset
+PowerBIDatasetsWorkspace
+| project TimeGenerated, 
+          OperationName, 
+          CpuTimeMs, 
+          DurationMs, 
+          EventText,  
+          XmlaRequestId, 
+          PremiumCapacityId,  
+          PowerBIWorkspaceId, PowerBIWorkspaceName,
+          ArtifactId, ArtifactName, 
+          ExecutingUser, 
+          XmlaSessionId, 
+          CorrelationId
+| where  ( OperationName == 'QueryEnd' or OperationName == 'QueryBegin') and ArtifactName == "SlowReport-Databricks-DQ"
+| order by TimeGenerated desc
+
+--------------------------------------------------------------------------------------------
+
+//query duration percentiles for a single day in 1 hour bins
+PowerBIDatasetsWorkspace
+| where TimeGenerated >= todatetime('2021-04-28') and TimeGenerated <= todatetime('2021-04-29')
+| where OperationName == 'QueryEnd'
+| summarize percentiles(DurationMs, 0.5, 0.9) by bin(TimeGenerated, 1h)
+
+--------------------------------------------------------------------------------------------
+
+// refresh durations by workspace and semantic model for last 30d
+PowerBIDatasetsWorkspace
+| where TimeGenerated > ago(30d)
+| where OperationName == 'CommandEnd'
+| where ExecutingUser contains 'Power BI Service'
+| where EventText contains 'refresh'
+| project PowerBIWorkspaceName, DatasetName = ArtifactName, DurationMs
+
+--------------------------------------------------------------------------------------------
+
+// log count per day for last 30d
+PowerBIDatasetsWorkspace
+| where TimeGenerated > ago(30d)
+| summarize count() by format_datetime(TimeGenerated, 'yyyy-MM-dd')
+
+--------------------------------------------------------------------------------------------
+
+// average query duration by day for last 30d
+PowerBIDatasetsWorkspace
+| where TimeGenerated > ago(30d)
+| where OperationName == 'QueryEnd'
+| summarize avg(DurationMs) by format_datetime(TimeGenerated, 'yyyy-MM-dd')
+
+--------------------------------------------------------------------------------------------
+
+//You can download the template report from here.
+
+https://github.com/microsoft/PowerBI-LogAnalytics-Template-Reports
