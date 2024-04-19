@@ -1,0 +1,5 @@
+https://github.com/RuiRomano/pbigtwmonitor - Gateway monitor report
+
+https://github.com/datalakin/PowerBI-Tools-For-Capacities - Realistic tool 
+
+https://github.com/microsoft/PowerBI-LogAnalytics-Template-Reports - Log Analytics Report 
